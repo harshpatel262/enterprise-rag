@@ -2,6 +2,10 @@
 
 **Retrieval-augmented generation platform for enterprise knowledge bases**, built with Java 21 and Spring Boot. Ingest internal documents, retrieve with vector similarity search, and generate **citation-grounded answers** — the model is constrained to the retrieved passages and must say so when they don't contain the answer.
 
+![Demo: document ingestion and a citation-grounded query](docs/demo.gif)
+
+*(recorded with [VHS](https://github.com/charmbracelet/vhs) from [docs/demo.tape](docs/demo.tape) — reproducible against the zero-infra profile)*
+
 ## Architecture
 
 ```mermaid
