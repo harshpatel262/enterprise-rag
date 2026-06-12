@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: enterprise-rag
+
+rag:
+  chunker: paragraph        # paragraph | sliding-window
+  chunk-size: 1200
+  chunk-overlap: 200
+  default-top-k: 5
+  anthropic-api-key: ${ANTHROPIC_API_KEY:}   # blank -> offline extractive answers
+  model: claude-sonnet-4-6
+
+  # used only with --spring.profiles.active=postgres
+  postgres:
+    url: jdbc:postgresql://localhost:5432/rag
+    username: rag
+    password: rag
