@@ -1,5 +1,7 @@
 # Enterprise RAG
 
+[![CI](https://github.com/harshpatel262/enterprise-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/harshpatel262/enterprise-rag/actions/workflows/ci.yml)
+
 **Retrieval-augmented generation platform for enterprise knowledge bases**, built with Java 21 and Spring Boot. Ingest internal documents, retrieve with vector similarity search, and generate **citation-grounded answers** — the model is constrained to the retrieved passages and must say so when they don't contain the answer.
 
 ![Demo: document ingestion and a citation-grounded query](docs/demo.gif)
