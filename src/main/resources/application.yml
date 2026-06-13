@@ -7,6 +7,8 @@ rag:
   chunk-size: 1200
   chunk-overlap: 200
   default-top-k: 5
+  retriever: hybrid         # hybrid (BM25 + vector via RRF) | vector
+  rrf-k: 60                 # reciprocal rank fusion constant
   anthropic-api-key: ${ANTHROPIC_API_KEY:}   # blank -> offline extractive answers
   model: claude-sonnet-4-6
 

@@ -3,25 +3,21 @@ package com.harshpatel.rag.service;
 import com.harshpatel.rag.api.dto.Citation;
 import com.harshpatel.rag.api.dto.QueryResponse;
 import com.harshpatel.rag.config.RagProperties;
-import com.harshpatel.rag.core.embedding.EmbeddingClient;
 import com.harshpatel.rag.core.llm.LlmClient;
+import com.harshpatel.rag.core.retrieval.Retriever;
 import com.harshpatel.rag.core.store.ScoredChunk;
-import com.harshpatel.rag.core.store.VectorStore;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
 public class QueryService {
 
-    private final EmbeddingClient embedder;
-    private final VectorStore store;
+    private final Retriever retriever;
     private final LlmClient llm;
     private final RagProperties properties;
 
-    public QueryService(EmbeddingClient embedder, VectorStore store, LlmClient llm,
-                        RagProperties properties) {
-        this.embedder = embedder;
-        this.store = store;
+    public QueryService(Retriever retriever, LlmClient llm, RagProperties properties) {
+        this.retriever = retriever;
         this.llm = llm;
         this.properties = properties;
     }
@@ -30,7 +26,7 @@ public class QueryService {
         int k = (topK == null || topK <= 0) ? properties.defaultTopK() : topK;
 
         long start = System.nanoTime();
-        List<ScoredChunk> retrieved = store.search(embedder.embed(question), k);
+        List<ScoredChunk> retrieved = retriever.retrieve(question, k);
         long retrievalMs = (System.nanoTime() - start) / 1_000_000;
 
         String answer = llm.answer(question, retrieved);

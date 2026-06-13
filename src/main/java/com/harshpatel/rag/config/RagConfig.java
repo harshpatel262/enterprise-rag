@@ -5,9 +5,15 @@ import com.harshpatel.rag.core.chunking.ParagraphChunker;
 import com.harshpatel.rag.core.chunking.SlidingWindowChunker;
 import com.harshpatel.rag.core.embedding.EmbeddingClient;
 import com.harshpatel.rag.core.embedding.HashingEmbeddingClient;
+import com.harshpatel.rag.core.lexical.InMemoryLexicalIndex;
+import com.harshpatel.rag.core.lexical.LexicalIndex;
 import com.harshpatel.rag.core.llm.AnthropicLlmClient;
 import com.harshpatel.rag.core.llm.ExtractiveLlmClient;
 import com.harshpatel.rag.core.llm.LlmClient;
+import com.harshpatel.rag.core.retrieval.HybridRetriever;
+import com.harshpatel.rag.core.retrieval.Retriever;
+import com.harshpatel.rag.core.retrieval.VectorRetriever;
+import com.harshpatel.rag.core.store.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -33,6 +39,23 @@ public class RagConfig {
     @Bean
     EmbeddingClient embeddingClient() {
         return new HashingEmbeddingClient();
+    }
+
+    @Bean
+    LexicalIndex lexicalIndex() {
+        return new InMemoryLexicalIndex();
+    }
+
+    @Bean
+    Retriever retriever(RagProperties properties, EmbeddingClient embedder,
+                        VectorStore store, LexicalIndex lexicalIndex) {
+        VectorRetriever vector = new VectorRetriever(embedder, store);
+        return switch (properties.retriever()) {
+            case "vector" -> vector;
+            case "hybrid" -> new HybridRetriever(vector, lexicalIndex, properties.rrfK());
+            default -> throw new IllegalArgumentException(
+                    "unknown retriever: " + properties.retriever());
+        };
     }
 
     @Bean

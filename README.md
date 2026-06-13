@@ -32,9 +32,20 @@ Every pipeline stage is an interface with swappable implementations (strategy pa
 | Chunking | `ChunkingStrategy` | `ParagraphChunker` (semantic units), `SlidingWindowChunker` (overlapping windows) |
 | Embedding | `EmbeddingClient` | `HashingEmbeddingClient` (deterministic, zero-infra); drop-in point for transformer embeddings |
 | Storage | `VectorStore` | `InMemoryVectorStore` (default), `PgVectorStore` (pgvector + cosine index, `postgres` profile) |
+| Retrieval | `Retriever` | `HybridRetriever` (BM25 + vector via RRF, default), `VectorRetriever` (dense only) |
 | Generation | `LlmClient` | `AnthropicLlmClient` (Claude, grounded + cited), `ExtractiveLlmClient` (offline fallback) |
 
 This is the property that matters in an enterprise setting: the same pipeline runs with zero infrastructure on a laptop and against Postgres/pgvector + Claude in production, with **no code changes — only configuration**.
+
+### Hybrid retrieval (BM25 + vector)
+
+Dense vector search handles paraphrase and semantics but blurs exact terms, identifiers, and rare tokens; sparse keyword search (BM25) nails those but misses synonyms. The default `HybridRetriever` runs both and fuses their ranked lists with **Reciprocal Rank Fusion**:
+
+```
+fused_score(chunk) = Σ  1 / (k + rank_in_list)      # k = 60
+```
+
+RRF combines lists by *rank* rather than raw score, so it needs no calibration between the two incompatible scales (cosine similarity vs. BM25). Each retriever contributes a candidate pool larger than the requested top-k, so a chunk found by only one method can still surface after fusion — see [`HybridRetrieverTest`](src/test/java/com/harshpatel/rag/core/HybridRetrieverTest.java). Set `rag.retriever: vector` to fall back to dense-only retrieval.
 
 ### Grounding contract
 
@@ -93,6 +104,8 @@ All knobs live under `rag.*` in `application.yml`:
 | `rag.chunk-size` | `1200` | Max characters per chunk |
 | `rag.chunk-overlap` | `200` | Overlap (sliding-window only) |
 | `rag.default-top-k` | `5` | Retrieval depth |
+| `rag.retriever` | `hybrid` | `hybrid` (BM25 + vector via RRF) or `vector` |
+| `rag.rrf-k` | `60` | Reciprocal rank fusion constant (hybrid only) |
 | `rag.anthropic-api-key` | `${ANTHROPIC_API_KEY}` | Blank → offline extractive answers |
 | `rag.model` | `claude-sonnet-4-6` | Generation model |
 
@@ -104,7 +117,8 @@ All knobs live under `rag.*` in `application.yml`:
 
 ## Roadmap
 
-- [ ] Hybrid retrieval (BM25 + vector) with reciprocal rank fusion
+- [x] Hybrid retrieval (BM25 + vector) with reciprocal rank fusion
+- [ ] FTS-backed lexical index for the `postgres` profile (the in-memory BM25 index is rebuilt per process)
 - [ ] Transformer embedding client (ONNX runtime, local inference)
 - [ ] Retrieval evaluation harness (recall@k against a labeled question set)
 - [ ] Incremental re-indexing on document update
